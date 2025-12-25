@@ -4,25 +4,75 @@ import platform
 import tkinter as tk
 import json
 
-# ==================== 配置区 ====================
-PROXY_IP = "10.0.0.232"         # 代理服务器IP
-WIN_INTERFACE = ""              # Windows网卡名，留空则自动检测（如"以太网"、"WLAN"）
-MAC_SERVICE = ""                # Mac网络服务名，留空则自动检测（如"Wi-Fi"、"Ethernet"）
+# ==================== CONFIG ====================
+PROXY_IP = "10.0.0.232"         # Proxy server IP (MUST CHANGE)
+WIN_INTERFACE = ""              # Windows NIC name, empty for auto-detect
+MAC_SERVICE = ""                # Mac network service, empty for auto-detect
 # ================================================
+
+def run_cmd(cmd):
+    return subprocess.run(cmd, shell=True, capture_output=True, text=True, encoding='utf-8', errors='ignore')
 
 class ProxySwitch:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("代理切换")
-        self.root.geometry("150x130")
+        self.root.title("PS")
+        self.root.geometry("160x180")
         self.root.resizable(False, False)
+        self.root.configure(bg="#2b2b2b")
+        
+        # 去掉窗口图标
+        try:
+            self.root.iconbitmap(default='')
+        except:
+            pass
+        
+        # 窗口居中
+        self.root.update_idletasks()
+        x = (self.root.winfo_screenwidth() - 160) // 2
+        y = (self.root.winfo_screenheight() - 180) // 2
+        self.root.geometry(f"160x180+{x}+{y}")
+        
         self.on = False
-        self.msg = tk.Label(self.root, text="", font=("Arial", 9))
-        self.msg.pack(pady=(10,0))
-        self.btn = tk.Button(self.root, text="OFF", width=8, height=2, bg="gray",
-                            command=self.toggle, font=("Arial", 14, "bold"))
-        self.btn.pack(expand=True)
+        
+        # 间距
+        tk.Frame(self.root, height=20, bg="#2b2b2b").pack()
+        
+        # 圆形按钮画布
+        self.canvas = tk.Canvas(self.root, width=120, height=120, 
+                                bg="#2b2b2b", highlightthickness=0)
+        self.canvas.pack()
+        
+        # 画圆形按钮
+        self.btn = self.canvas.create_oval(10, 10, 110, 110, fill="#555555", 
+                                           outline="#404040", width=3)
+        self.btn_text = self.canvas.create_text(60, 60, text="OFF", 
+                                                font=("Arial", 18, "bold"), fill="#888888")
+        
+        # 绑定点击
+        self.canvas.tag_bind(self.btn, "<Button-1>", lambda e: self.toggle())
+        self.canvas.tag_bind(self.btn_text, "<Button-1>", lambda e: self.toggle())
+        
+        # 悬停效果
+        self.canvas.tag_bind(self.btn, "<Enter>", self.on_hover)
+        self.canvas.tag_bind(self.btn, "<Leave>", self.on_leave)
+        self.canvas.tag_bind(self.btn_text, "<Enter>", self.on_hover)
+        self.canvas.tag_bind(self.btn_text, "<Leave>", self.on_leave)
+        
+        # 错误信息
+        self.msg = tk.Label(self.root, text="", font=("Arial", 8), 
+                           bg="#2b2b2b", fg="#ff6b6b")
+        self.msg.pack(pady=(5, 0))
+        
         self.root.mainloop()
+
+    def on_hover(self, e):
+        color = "#45a049" if self.on else "#666666"
+        self.canvas.itemconfig(self.btn, fill=color)
+
+    def on_leave(self, e):
+        color = "#4CAF50" if self.on else "#555555"
+        self.canvas.itemconfig(self.btn, fill=color)
 
     def toggle(self):
         self.on = not self.on
@@ -30,22 +80,24 @@ class ProxySwitch:
         try:
             if self.on:
                 self.enable_proxy()
-                self.btn.config(text="ON", bg="green")
+                self.canvas.itemconfig(self.btn, fill="#4CAF50", outline="#45a049")
+                self.canvas.itemconfig(self.btn_text, text="ON", fill="#ffffff")
             else:
                 self.disable_proxy()
-                self.btn.config(text="OFF", bg="gray")
+                self.canvas.itemconfig(self.btn, fill="#555555", outline="#404040")
+                self.canvas.itemconfig(self.btn_text, text="OFF", fill="#888888")
         except Exception as e:
-            self.on = not self.on  # 回滚状态
-            self.msg.config(text=str(e)[:20])
-            self.btn.config(bg="red")
+            self.on = not self.on
+            self.msg.config(text=str(e)[:25])
+            self.canvas.itemconfig(self.btn, fill="#e74c3c", outline="#c0392b")
 
     def run(self, cmd, sudo=False):
         if sudo and platform.system() == "Darwin":
             escaped = cmd.replace('\\', '\\\\').replace('"', '\\"')
             cmd = f'''osascript -e 'do shell script "{escaped}" with administrator privileges' '''
-        r = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        r = run_cmd(cmd)
         if r.returncode != 0 and not sudo:
-            raise Exception(f"命令执行失败")
+            raise Exception(f"Failed: {r.stderr[:50]}")
         return r
 
     def enable_proxy(self):
@@ -53,7 +105,7 @@ class ProxySwitch:
             iface = WIN_INTERFACE or self.get_win_interface()
             ip, mask = self.get_win_current_ip(iface)
             self.run(f'netsh interface ip set address name="{iface}" static {ip} {mask} {PROXY_IP}')
-            self.run(f'netsh interface ip set dns name="{iface}" static {PROXY_IP}')
+            run_cmd(f'netsh interface ip set dns name="{iface}" static {PROXY_IP}')
         else:
             svc = MAC_SERVICE or self.get_mac_service()
             ip, mask = self.get_mac_current_ip(svc)
@@ -64,65 +116,57 @@ class ProxySwitch:
         if platform.system() == "Windows":
             iface = WIN_INTERFACE or self.get_win_interface()
             self.run(f'netsh interface ip set address name="{iface}" dhcp')
-            self.run(f'netsh interface ip set dns name="{iface}" dhcp')
+            run_cmd(f'netsh interface ip set dns name="{iface}" dhcp')
         else:
             svc = MAC_SERVICE or self.get_mac_service()
             self.run(f'networksetup -setdhcp "{svc}"', sudo=True)
             self.run(f'networksetup -setdnsservers "{svc}" Empty', sudo=True)
 
     def get_win_interface(self):
-        cmd = 'powershell -Command "Get-NetAdapter | Where-Object {$_.Status -eq \'Up\'} | Select-Object -First 1 -ExpandProperty Name"'
-        r = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        cmd = 'powershell -Command "Get-NetAdapter -Physical | Where-Object {$_.Status -eq \'Up\'} | Select-Object -First 1 -ExpandProperty Name"'
+        r = run_cmd(cmd)
         name = r.stdout.strip()
         if not name:
-            raise Exception("未找到活动网卡")
+            raise Exception("No active NIC")
         return name
 
     def get_win_current_ip(self, iface):
         cmd = f'powershell -Command "Get-NetIPAddress -InterfaceAlias \'{iface}\' -AddressFamily IPv4 | Select-Object IPAddress,PrefixLength | ConvertTo-Json"'
-        r = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        r = run_cmd(cmd)
         try:
             data = json.loads(r.stdout)
             if isinstance(data, list):
                 data = data[0]
-            ip = data["IPAddress"]
-            prefix = data["PrefixLength"]
-            mask = self.prefix_to_mask(prefix)
-            return ip, mask
+            return data["IPAddress"], self.prefix_to_mask(data["PrefixLength"])
         except:
-            raise Exception("无法获取当前IP")
+            raise Exception("Cannot get IP")
 
     def prefix_to_mask(self, prefix):
         mask = (0xffffffff >> (32 - prefix)) << (32 - prefix)
         return f"{(mask >> 24) & 0xff}.{(mask >> 16) & 0xff}.{(mask >> 8) & 0xff}.{mask & 0xff}"
 
     def get_mac_service(self):
-        r = subprocess.run("networksetup -listallnetworkservices", shell=True, capture_output=True, text=True)
+        r = run_cmd("networksetup -listallnetworkservices")
         for line in r.stdout.splitlines()[1:]:
             svc = line.strip()
             if svc.startswith("*"):
                 continue
-            check = subprocess.run(f'networksetup -getinfo "{svc}"', shell=True, capture_output=True, text=True)
-            if "IP address:" in check.stdout:
-                for l in check.stdout.splitlines():
-                    if l.startswith("IP address:") and l.split(":")[1].strip():
-                        return svc
-        raise Exception("未找到活动网络")
+            check = run_cmd(f'networksetup -getinfo "{svc}"')
+            for l in check.stdout.splitlines():
+                if l.startswith("IP address:") and l.split(":")[1].strip():
+                    return svc
+        raise Exception("No active network")
 
     def get_mac_current_ip(self, svc):
-        r = subprocess.run(f'networksetup -getinfo "{svc}"', shell=True, capture_output=True, text=True)
+        r = run_cmd(f'networksetup -getinfo "{svc}"')
         ip, mask = None, None
         for line in r.stdout.splitlines():
             if line.startswith("IP address:"):
-                val = line.split(":", 1)[1].strip()
-                if val:
-                    ip = val
+                ip = line.split(":", 1)[1].strip()
             elif line.startswith("Subnet mask:"):
-                val = line.split(":", 1)[1].strip()
-                if val:
-                    mask = val
+                mask = line.split(":", 1)[1].strip()
         if not ip or not mask:
-            raise Exception("无法获取当前IP")
+            raise Exception("Cannot get IP")
         return ip, mask
 
 if __name__ == "__main__":
