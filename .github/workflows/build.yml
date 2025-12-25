@@ -1,4 +1,3 @@
-# .github/workflows/build.yml
 name: Build
 on: [push]
 
@@ -11,22 +10,58 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install pyinstaller
-      - run: pyinstaller --onefile --windowed --name ProxySwitch-Win proxy_switch.py
+      - run: pyinstaller --onefile --windowed --name ProxySwitch proxy_switch.py
       - uses: actions/upload-artifact@v4
         with:
           name: ProxySwitch-Windows
-          path: dist/ProxySwitch-Win.exe
+          path: dist/ProxySwitch.exe
 
-  build-mac:
-    runs-on: macos-latest
+  build-mac-intel:
+    runs-on: macos-13    # Intel
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - run: pip install pyinstaller
-      - run: pyinstaller --onefile --windowed --name ProxySwitch-Mac proxy_switch.py
+      - run: pyinstaller --onefile --windowed --name ProxySwitch-intel proxy_switch.py
       - uses: actions/upload-artifact@v4
         with:
-          name: ProxySwitch-Mac
-          path: dist/ProxySwitch-Mac
+          name: mac-intel
+          path: dist/ProxySwitch-intel
+
+  build-mac-arm:
+    runs-on: macos-14    # Apple Silicon
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install pyinstaller
+      - run: pyinstaller --onefile --windowed --name ProxySwitch-arm proxy_switch.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-arm
+          path: dist/ProxySwitch-arm
+
+  merge-mac-universal:
+    needs: [build-mac-intel, build-mac-arm]
+    runs-on: macos-14
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: mac-intel
+          path: intel
+      - uses: actions/download-artifact@v4
+        with:
+          name: mac-arm
+          path: arm
+      - name: Create Universal Binary
+        run: |
+          chmod +x intel/ProxySwitch-intel arm/ProxySwitch-arm
+          lipo -create -output ProxySwitch intel/ProxySwitch-intel arm/ProxySwitch-arm
+          chmod +x ProxySwitch
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ProxySwitch-Mac-Universal
+          path: ProxySwitch
