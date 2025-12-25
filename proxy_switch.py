@@ -20,14 +20,13 @@ class ProxySwitch:
         self.root.geometry("160x180")
         self.root.resizable(False, False)
         self.root.configure(bg="#2b2b2b")
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         
-        # 去掉窗口图标
         try:
             self.root.iconbitmap(default='')
         except:
             pass
         
-        # 窗口居中
         self.root.update_idletasks()
         x = (self.root.winfo_screenwidth() - 160) // 2
         y = (self.root.winfo_screenheight() - 180) // 2
@@ -35,44 +34,43 @@ class ProxySwitch:
         
         self.on = False
         
-        # 间距
         tk.Frame(self.root, height=20, bg="#2b2b2b").pack()
         
-        # 圆形按钮画布
         self.canvas = tk.Canvas(self.root, width=120, height=120, 
                                 bg="#2b2b2b", highlightthickness=0)
         self.canvas.pack()
         
-        # 画圆形按钮
         self.btn = self.canvas.create_oval(10, 10, 110, 110, fill="#555555", 
                                            outline="#404040", width=3)
         self.btn_text = self.canvas.create_text(60, 60, text="OFF", 
                                                 font=("Arial", 18, "bold"), fill="#888888")
         
-        # 绑定点击
         self.canvas.tag_bind(self.btn, "<Button-1>", lambda e: self.toggle())
         self.canvas.tag_bind(self.btn_text, "<Button-1>", lambda e: self.toggle())
-        
-        # 悬停效果
         self.canvas.tag_bind(self.btn, "<Enter>", self.on_hover)
         self.canvas.tag_bind(self.btn, "<Leave>", self.on_leave)
         self.canvas.tag_bind(self.btn_text, "<Enter>", self.on_hover)
         self.canvas.tag_bind(self.btn_text, "<Leave>", self.on_leave)
         
-        # 错误信息
         self.msg = tk.Label(self.root, text="", font=("Arial", 8), 
                            bg="#2b2b2b", fg="#ff6b6b")
         self.msg.pack(pady=(5, 0))
         
         self.root.mainloop()
 
+    def on_close(self):
+        if self.on:
+            try:
+                self.disable_proxy()
+            except:
+                pass
+        self.root.destroy()
+
     def on_hover(self, e):
-        color = "#45a049" if self.on else "#666666"
-        self.canvas.itemconfig(self.btn, fill=color)
+        self.canvas.itemconfig(self.btn, fill="#45a049" if self.on else "#666666")
 
     def on_leave(self, e):
-        color = "#4CAF50" if self.on else "#555555"
-        self.canvas.itemconfig(self.btn, fill=color)
+        self.canvas.itemconfig(self.btn, fill="#4CAF50" if self.on else "#555555")
 
     def toggle(self):
         self.on = not self.on
