@@ -25,91 +25,10 @@ jobs:
           python-version: '3.11'
       - run: pip install pyinstaller
       - run: pyinstaller --onefile --windowed --name ProxySwitch proxy_switch.py
-      - name: Package app bundle
-        run: |
-          mkdir -p ProxySwitch-Intel.app/Contents/MacOS
-          cp dist/ProxySwitch ProxySwitch-Intel.app/Contents/MacOS/
-          cat > ProxySwitch-Intel.app/Contents/Info.plist << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>CFBundleExecutable</key>
-              <string>ProxySwitch</string>
-              <key>CFBundleIdentifier</key>
-              <string>com.local.proxyswitch</string>
-              <key>CFBundleName</key>
-              <string>ProxySwitch</string>
-              <key>CFBundlePackageType</key>
-              <string>APPL</string>
-              <key>LSUIElement</key>
-              <true/>
-          </dict>
-          </plist>
-          EOF
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mac-intel
-          path: ProxySwitch-Intel.app
-
-  build-mac-arm:
-    runs-on: macos-15
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install pyinstaller
-      - run: pyinstaller --onefile --windowed --name ProxySwitch proxy_switch.py
-      - name: Package app bundle
-        run: |
-          mkdir -p ProxySwitch-ARM.app/Contents/MacOS
-          cp dist/ProxySwitch ProxySwitch-ARM.app/Contents/MacOS/
-          cat > ProxySwitch-ARM.app/Contents/Info.plist << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>CFBundleExecutable</key>
-              <string>ProxySwitch</string>
-              <key>CFBundleIdentifier</key>
-              <string>com.local.proxyswitch</string>
-              <key>CFBundleName</key>
-              <string>ProxySwitch</string>
-              <key>CFBundlePackageType</key>
-              <string>APPL</string>
-              <key>LSUIElement</key>
-              <true/>
-          </dict>
-          </plist>
-          EOF
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mac-arm
-          path: ProxySwitch-ARM.app
-
-  merge-mac-universal:
-    needs: [build-mac-intel, build-mac-arm]
-    runs-on: macos-15
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: mac-intel
-          path: intel
-      - uses: actions/download-artifact@v4
-        with:
-          name: mac-arm
-          path: arm
-      - name: Create Universal App
+      - name: Create app bundle
         run: |
           mkdir -p ProxySwitch.app/Contents/MacOS
-          chmod +x intel/ProxySwitch-Intel.app/Contents/MacOS/ProxySwitch
-          chmod +x arm/ProxySwitch-ARM.app/Contents/MacOS/ProxySwitch
-          lipo -create \
-            intel/ProxySwitch-Intel.app/Contents/MacOS/ProxySwitch \
-            arm/ProxySwitch-ARM.app/Contents/MacOS/ProxySwitch \
-            -output ProxySwitch.app/Contents/MacOS/ProxySwitch
-          chmod +x ProxySwitch.app/Contents/MacOS/ProxySwitch
+          cp dist/ProxySwitch ProxySwitch.app/Contents/MacOS/
           cat > ProxySwitch.app/Contents/Info.plist << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -128,9 +47,45 @@ jobs:
           </dict>
           </plist>
           EOF
-      - name: Zip app
-        run: zip -r ProxySwitch-Mac.zip ProxySwitch.app
+          zip -r ProxySwitch-Mac-Intel.zip ProxySwitch.app
       - uses: actions/upload-artifact@v4
         with:
-          name: ProxySwitch-Mac-Universal
-          path: ProxySwitch-Mac.zip
+          name: ProxySwitch-Mac-Intel
+          path: ProxySwitch-Mac-Intel.zip
+
+  build-mac-arm:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install pyinstaller
+      - run: pyinstaller --onefile --windowed --name ProxySwitch proxy_switch.py
+      - name: Create app bundle
+        run: |
+          mkdir -p ProxySwitch.app/Contents/MacOS
+          cp dist/ProxySwitch ProxySwitch.app/Contents/MacOS/
+          cat > ProxySwitch.app/Contents/Info.plist << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleExecutable</key>
+              <string>ProxySwitch</string>
+              <key>CFBundleIdentifier</key>
+              <string>com.local.proxyswitch</string>
+              <key>CFBundleName</key>
+              <string>ProxySwitch</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>LSUIElement</key>
+              <true/>
+          </dict>
+          </plist>
+          EOF
+          zip -r ProxySwitch-Mac-ARM.zip ProxySwitch.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ProxySwitch-Mac-ARM
+          path: ProxySwitch-Mac-ARM.zip
