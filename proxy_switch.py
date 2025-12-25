@@ -2,16 +2,18 @@
 import subprocess
 import platform
 import tkinter as tk
+from tkinter import simpledialog
 import json
 
 # ==================== CONFIG ====================
-PROXY_IP = "10.0.0.232"         # Proxy server IP (MUST CHANGE)
-WIN_INTERFACE = ""              # Windows NIC name, empty for auto-detect
-MAC_SERVICE = ""                # Mac network service, empty for auto-detect
+PROXY_IP = "10.0.0.232"
+WIN_INTERFACE = ""
+MAC_SERVICE = ""
 # ================================================
 
-def run_cmd(cmd):
-    return subprocess.run(cmd, shell=True, capture_output=True, text=True, encoding='utf-8', errors='ignore')
+def run_cmd(cmd, input_data=None):
+    return subprocess.run(cmd, shell=True, capture_output=True, text=True, 
+                         encoding='utf-8', errors='ignore', input=input_data)
 
 class ProxySwitch:
     def __init__(self):
@@ -27,12 +29,24 @@ class ProxySwitch:
         except:
             pass
         
+        self.on = False
+        self.mac_password = None
+        self.mac_service_cache = None
+        
+        # Mac: 启动时获取密码
+        if platform.system() == "Darwin":
+            self.root.withdraw()  # 先隐藏主窗口
+            self.mac_password = simpledialog.askstring(
+                "授权", "请输入管理员密码：", show='*', parent=self.root)
+            if not self.mac_password:
+                self.root.destroy()
+                return
+            self.root.deiconify()  # 显示主窗口
+        
         self.root.update_idletasks()
         x = (self.root.winfo_screenwidth() - 160) // 2
         y = (self.root.winfo_screenheight() - 180) // 2
         self.root.geometry(f"160x180+{x}+{y}")
-        
-        self.on = False
         
         tk.Frame(self.root, height=20, bg="#2b2b2b").pack()
         
@@ -89,13 +103,18 @@ class ProxySwitch:
             self.msg.config(text=str(e)[:25])
             self.canvas.itemconfig(self.btn, fill="#e74c3c", outline="#c0392b")
 
-    def run(self, cmd, sudo=False):
-        if sudo and platform.system() == "Darwin":
-            escaped = cmd.replace('\\', '\\\\').replace('"', '\\"')
-            cmd = f'''osascript -e 'do shell script "{escaped}" with administrator privileges' '''
+    def run(self, cmd):
         r = run_cmd(cmd)
-        if r.returncode != 0 and not sudo:
+        if r.returncode != 0:
             raise Exception(f"Failed: {r.stderr[:50]}")
+        return r
+
+    def run_mac_sudo(self, commands):
+        script = " && ".join(commands)
+        # sudo -S 从 stdin 读取密码
+        r = run_cmd(f'sudo -S sh -c \'{script}\'', input_data=self.mac_password + '\n')
+        if "incorrect password" in r.stderr.lower():
+            raise Exception("Password incorrect")
         return r
 
     def enable_proxy(self):
@@ -107,8 +126,10 @@ class ProxySwitch:
         else:
             svc = MAC_SERVICE or self.get_mac_service()
             ip, mask = self.get_mac_current_ip(svc)
-            self.run(f'networksetup -setmanual "{svc}" {ip} {mask} {PROXY_IP}', sudo=True)
-            self.run(f'networksetup -setdnsservers "{svc}" {PROXY_IP}', sudo=True)
+            self.run_mac_sudo([
+                f'networksetup -setmanual "{svc}" {ip} {mask} {PROXY_IP}',
+                f'networksetup -setdnsservers "{svc}" {PROXY_IP}'
+            ])
 
     def disable_proxy(self):
         if platform.system() == "Windows":
@@ -117,8 +138,10 @@ class ProxySwitch:
             run_cmd(f'netsh interface ip set dns name="{iface}" dhcp')
         else:
             svc = MAC_SERVICE or self.get_mac_service()
-            self.run(f'networksetup -setdhcp "{svc}"', sudo=True)
-            self.run(f'networksetup -setdnsservers "{svc}" Empty', sudo=True)
+            self.run_mac_sudo([
+                f'networksetup -setdhcp "{svc}"',
+                f'networksetup -setdnsservers "{svc}" Empty'
+            ])
 
     def get_win_interface(self):
         cmd = 'powershell -Command "Get-NetAdapter -Physical | Where-Object {$_.Status -eq \'Up\'} | Select-Object -First 1 -ExpandProperty Name"'
@@ -144,6 +167,8 @@ class ProxySwitch:
         return f"{(mask >> 24) & 0xff}.{(mask >> 16) & 0xff}.{(mask >> 8) & 0xff}.{mask & 0xff}"
 
     def get_mac_service(self):
+        if self.mac_service_cache:
+            return self.mac_service_cache
         r = run_cmd("networksetup -listallnetworkservices")
         for line in r.stdout.splitlines()[1:]:
             svc = line.strip()
@@ -152,6 +177,7 @@ class ProxySwitch:
             check = run_cmd(f'networksetup -getinfo "{svc}"')
             for l in check.stdout.splitlines():
                 if l.startswith("IP address:") and l.split(":")[1].strip():
+                    self.mac_service_cache = svc
                     return svc
         raise Exception("No active network")
 
