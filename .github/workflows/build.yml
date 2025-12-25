@@ -17,7 +17,7 @@ jobs:
           path: dist/ProxySwitch.exe
 
   build-mac-intel:
-    runs-on: macos-13    # Intel
+    runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -31,7 +31,7 @@ jobs:
           path: dist/ProxySwitch-intel
 
   build-mac-arm:
-    runs-on: macos-14    # Apple Silicon
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -46,7 +46,7 @@ jobs:
 
   merge-mac-universal:
     needs: [build-mac-intel, build-mac-arm]
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/download-artifact@v4
         with:
