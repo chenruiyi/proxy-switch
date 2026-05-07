@@ -16,9 +16,3 @@ node_modules/
 # OS
 .DS_Store
 Thumbs.db
-
-# Python (legacy reference, kept for parity check)
-__pycache__/
-*.py[oc]
-.venv/
-*.egg-info/
