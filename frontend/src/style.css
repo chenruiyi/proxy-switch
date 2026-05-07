@@ -1,0 +1,418 @@
+/* === Theme variables === */
+
+:root {
+    /* Light mode */
+    --bg: #f4f5f7;
+    --fg: #1f2937;
+    --muted: #6b7280;
+    --surface: #ffffff;
+    --surface-hover: #e5e7eb;
+    --border: rgba(0, 0, 0, 0.08);
+
+    --btn-off-bg: linear-gradient(145deg, #d4d6dd, #b8babf);
+    --btn-off-fg: #6b7280;
+    --btn-off-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), inset 0 -2px 4px rgba(0, 0, 0, 0.06), inset 0 2px 4px rgba(255, 255, 255, 0.5);
+
+    --btn-on-bg: linear-gradient(145deg, #34d399, #10b981);
+    --btn-on-fg: #ffffff;
+    --btn-on-shadow: 0 6px 18px rgba(16, 185, 129, 0.35), inset 0 -2px 4px rgba(0, 0, 0, 0.08), inset 0 2px 4px rgba(255, 255, 255, 0.3);
+
+    --btn-busy-bg: linear-gradient(145deg, #93a3b6, #6b7c93);
+    --btn-busy-fg: #ffffff;
+
+    --error: #dc2626;
+    --close-bg: rgba(0, 0, 0, 0.06);
+    --close-bg-hover: #ef4444;
+    --close-fg: #6b7280;
+    --close-fg-hover: #ffffff;
+
+    --ip-fg: #6b7280;
+    --ip-input-bg: #ffffff;
+    --ip-input-border: rgba(0, 0, 0, 0.15);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Modern near-black with subtle blue tint */
+        --bg: #1a1b1f;
+        --fg: #e7e9ee;
+        --muted: #8b8f99;
+        --surface: #25272e;
+        --surface-hover: #2e3038;
+        --border: rgba(255, 255, 255, 0.06);
+
+        --btn-off-bg: linear-gradient(145deg, #2c2d33, #1f2026);
+        --btn-off-fg: #6b6f7a;
+        --btn-off-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.04);
+
+        --btn-on-bg: linear-gradient(145deg, #4ade80, #16a34a);
+        --btn-on-fg: #ffffff;
+        --btn-on-shadow: 0 6px 22px rgba(74, 222, 128, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.15);
+
+        --btn-busy-bg: linear-gradient(145deg, #4a5161, #353a47);
+        --btn-busy-fg: #d1d5db;
+
+        --error: #f87171;
+        --close-bg: rgba(255, 255, 255, 0.06);
+        --close-bg-hover: #ef4444;
+        --close-fg: #8b8f99;
+        --close-fg-hover: #ffffff;
+
+        --ip-fg: #8b8f99;
+        --ip-input-bg: #25272e;
+        --ip-input-border: rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* === Reset & base === */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    font-size: 13px;
+    border-radius: 12px;
+}
+
+#app {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    border-radius: 12px;
+    overflow: hidden;
+    --wails-draggable: drag;
+}
+
+/* === Titlebar === */
+
+.titlebar {
+    flex: 0 0 26px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 6px 8px 0;
+    --wails-draggable: drag;
+}
+
+.close-btn {
+    width: 14px;
+    height: 14px;
+    border: none;
+    border-radius: 50%;
+    background: var(--close-bg);
+    cursor: pointer;
+    position: relative;
+    transition: background 0.15s ease;
+    --wails-draggable: no-drag;
+    padding: 0;
+}
+
+.close-btn::before,
+.close-btn::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 7px;
+    height: 1.2px;
+    background: var(--close-fg);
+    transform-origin: center;
+    opacity: 0;
+    transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.close-btn::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.close-btn::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.close-btn:hover {
+    background: var(--close-bg-hover);
+}
+
+.close-btn:hover::before,
+.close-btn:hover::after {
+    opacity: 1;
+    background: var(--close-fg-hover);
+}
+
+/* === Main content === */
+
+.content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 4px 0 8px;
+    --wails-draggable: drag;
+}
+
+/* === Toggle button === */
+
+.toggle {
+    width: 110px;
+    height: 110px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    background: var(--btn-off-bg);
+    color: var(--btn-off-fg);
+    box-shadow: var(--btn-off-shadow);
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    --wails-draggable: no-drag;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.toggle:active {
+    transform: scale(0.96);
+}
+
+.toggle:disabled {
+    cursor: wait;
+    background: var(--btn-busy-bg);
+    color: var(--btn-busy-fg);
+}
+
+.toggle.is-on {
+    background: var(--btn-on-bg);
+    color: var(--btn-on-fg);
+    box-shadow: var(--btn-on-shadow);
+}
+
+/* Pulse halo on successful state change */
+.toggle.pulse::after {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    opacity: 0;
+    animation: pulse 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.45;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.2);
+    }
+}
+
+/* Cross-fade for ON/OFF text */
+.toggle-text {
+    transition: opacity 0.22s ease;
+}
+
+.toggle.fading .toggle-text {
+    opacity: 0;
+}
+
+/* === IP row === */
+
+.ip-row {
+    margin-top: 12px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--ip-fg);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    --wails-draggable: no-drag;
+}
+
+.ip-arrow {
+    opacity: 0.7;
+}
+
+.ip-text {
+    cursor: text;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background 0.15s ease;
+}
+
+.ip-row:not(.locked):not(.editing) .ip-text:hover {
+    background: var(--surface-hover);
+}
+
+.ip-row.locked .ip-text {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.ip-input {
+    display: none;
+    width: 100px;
+    padding: 2px 4px;
+    background: var(--ip-input-bg);
+    color: var(--fg);
+    border: 1px solid var(--ip-input-border);
+    border-radius: 4px;
+    outline: none;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+}
+
+.ip-input:focus {
+    border-color: #4ade80;
+}
+
+.ip-row.editing .ip-text {
+    display: none;
+}
+
+.ip-row.editing .ip-input {
+    display: inline-block;
+}
+
+/* === Error region === */
+
+.error {
+    margin-top: 8px;
+    padding: 0 12px;
+    min-height: 14px;
+    max-height: 50px;
+    overflow-y: auto;
+    color: var(--error);
+    font-size: 11px;
+    line-height: 1.4;
+    text-align: center;
+    word-break: break-word;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    --wails-draggable: no-drag;
+}
+
+.error.visible {
+    opacity: 1;
+}
+
+/* === Password dialog === */
+
+.pw-dialog {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--fg);
+    padding: 0;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+    margin: auto;
+    width: 180px;
+    --wails-draggable: no-drag;
+}
+
+.pw-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+}
+
+#pwForm {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 14px 12px;
+}
+
+.pw-title {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.pw-hint {
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.4;
+}
+
+.pw-input {
+    width: 100%;
+    padding: 6px 8px;
+    background: var(--ip-input-bg);
+    color: var(--fg);
+    border: 1px solid var(--ip-input-border);
+    border-radius: 5px;
+    outline: none;
+    font: inherit;
+}
+
+.pw-input:focus {
+    border-color: #4ade80;
+}
+
+.pw-error {
+    color: var(--error);
+    font-size: 10px;
+    min-height: 12px;
+    line-height: 1.2;
+}
+
+.pw-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.pw-btn {
+    padding: 4px 10px;
+    border: 1px solid var(--ip-input-border);
+    border-radius: 5px;
+    background: transparent;
+    color: var(--fg);
+    cursor: pointer;
+    font: inherit;
+    transition: background 0.15s ease;
+}
+
+.pw-btn:hover {
+    background: var(--surface-hover);
+}
+
+.pw-ok {
+    background: #10b981;
+    border-color: #10b981;
+    color: #ffffff;
+}
+
+.pw-ok:hover {
+    background: #059669;
+    border-color: #059669;
+}

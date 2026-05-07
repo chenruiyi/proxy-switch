@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>ProxySwitch</title>
+</head>
+<body>
+<div id="app">
+    <header class="titlebar" data-wails-drag>
+        <button class="close-btn" id="closeBtn" title="关闭" aria-label="关闭"></button>
+    </header>
+
+    <main class="content" data-wails-drag>
+        <button type="button" class="toggle" id="toggleBtn">
+            <span class="toggle-text" id="toggleText">OFF</span>
+        </button>
+
+        <div class="ip-row" id="ipRow">
+            <span class="ip-arrow">→</span>
+            <span class="ip-text" id="ipText">10.0.0.232</span>
+            <input class="ip-input" id="ipInput" type="text" maxlength="15" autocomplete="off" spellcheck="false"/>
+        </div>
+
+        <div class="error" id="error"></div>
+    </main>
+</div>
+
+<dialog class="pw-dialog" id="pwDialog">
+    <form method="dialog" id="pwForm">
+        <div class="pw-title">需要管理员密码</div>
+        <div class="pw-hint">用于 networksetup 修改网络配置</div>
+        <input class="pw-input" id="pwInput" type="password" autocomplete="current-password"/>
+        <div class="pw-error" id="pwError"></div>
+        <div class="pw-actions">
+            <button type="button" class="pw-btn pw-cancel" id="pwCancel">取消</button>
+            <button type="submit" class="pw-btn pw-ok" id="pwOk">确定</button>
+        </div>
+    </form>
+</dialog>
+
+<script src="./src/main.js" type="module"></script>
+</body>
+</html>

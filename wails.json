@@ -1,0 +1,20 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "ProxySwitch",
+  "outputfilename": "ProxySwitch",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "chenruiyi",
+    "email": "chenruiyi@acme-ai.com"
+  },
+  "info": {
+    "companyName": "ProxySwitch",
+    "productName": "ProxySwitch",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright © 2026",
+    "comments": "内网代理一键切换工具"
+  }
+}

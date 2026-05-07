@@ -1,0 +1,24 @@
+# Wails build artifacts
+build/bin/
+frontend/dist/
+node_modules/
+
+# Go
+*.exe
+*.test
+*.out
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python (legacy reference, kept for parity check)
+__pycache__/
+*.py[oc]
+.venv/
+*.egg-info/
